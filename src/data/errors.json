@@ -1,0 +1,13 @@
+{
+    "main": {
+        "val": {
+            "status": 400,
+            "message": "body validation error",
+            "body": true
+        },
+        "403": {
+            "status": 403,
+            "message": "forbidden"
+        }
+    }
+}
