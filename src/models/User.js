@@ -22,7 +22,13 @@ const User = mongoose.Schema({
     },
     company: {
         type: mongoose.Types.ObjectId,
-        required: false
+        required: false,
+        ref: "Company"
+    },
+    status: {
+        type: Number,
+        required: true,
+        default: 1
     }
 });
 

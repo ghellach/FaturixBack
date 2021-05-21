@@ -9,5 +9,27 @@
             "status": 403,
             "message": "forbidden"
         }
+    },
+    "auth": {
+        "emailExists": {
+            "status": 400,
+            "message": "email address is already used by another user"
+        },
+        "emailNotFound": {
+            "status": 400,
+            "message": "user with this email address has not been found"
+        },
+        "accountSuspended": {
+            "status": 403,
+            "message": "account is suspended"
+        },
+        "accountNotActivated": {
+            "status": 403,
+            "message": "account is not activated"
+        },
+        "sessionInvalid": {
+            "status": 403,
+            "message": "session is invalid"
+        }
     }
 }
