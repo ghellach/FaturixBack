@@ -14,6 +14,7 @@ const User = mongoose.Schema({
     email: {
         type: String,
         required: true,
+        unique: true,
         max: 255
     },
     password: {
@@ -29,7 +30,17 @@ const User = mongoose.Schema({
         type: Number,
         required: true,
         default: 1
-    }
+    },
+    createdAt: {
+        type: Date,
+        required: true,
+        default: () => new Date()
+    },
+    updatedAt: {
+        type: Date,
+        required: true,
+        default: () => new Date()
+    },
 });
 
 export default mongoose.model("User", User);

@@ -5,19 +5,6 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import moment from 'moment';
 
-function approvalChecker (user, res) {
-    // user approval check
-    if(user.status == 2) {
-        Provider.error(res, "auth", "accountSuspended");
-        return false;
-    }
-    else if (user.status == 3) {
-        Provider.error(res, "auth", "accountNotActivated");
-        return false;
-    }
-    return true;
-}
-
 export async function login(req, res) {
     try {
         const {error} = Validator.authValidator.login(req.body);
@@ -31,7 +18,7 @@ export async function login(req, res) {
         if(!bcrypt.compareSync(req.body.password, user.password)) return Provider.error(res, "auth", "passwordIncorrect");
 
         // user approval check
-        if(!approvalChecker()) return;
+        if(!Provider.auth.approvalChecker(user, res)) return;
 
         // session time determination
         const time = () => {
@@ -100,35 +87,13 @@ export async function newFunction (req, res) {
     }
 }
 
-export async function ping(req, res) {
+export async function ping(req, res, ) {
     try {
         const {error} = Validator.authValidator.ping(req.body);
         if(error) return Provider.error(res, "main", "val", error);
 
-        // rejector function 
-        const reject = () => Provider.error(res, "auth", "sessionInvalid");
-
-        // jwt check
-        try {
-            jwt.verify(req.body.session, process.env.JWT);
-        }
-        catch(err) {
-            return reject();
-        }
-        
-        //session fetch
-        const session = await Mongo.Session.findOne({token: req.body.session});
-        if(!session || session.status !== 1) return reject();
-        // user fetch
-        const user = await Mongo.User.findById(session.user).lean();
-        if(!user) return reject();
-        if(!approvalChecker(user, res)) {
-            session.status = 3;
-            await session.save();
-            return;
-        }
-
-        return res.sendStatus(200);
+        if(!await Provider.auth.authCheck(req, res, true)) return;
+        else return res.sendStatus(200);
 
     }catch(err) {
         console.log(err);

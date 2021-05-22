@@ -8,7 +8,8 @@ export default function errorEval (res, section, code, body) {
         const error = data[section][code];
     
         res.status(error.status).json({
-            code: String(section)+"."+String(code),
+            section: String(section),
+            code: String(code),
             status: error.status,
             message: error.message,
             body: error.body ? body ? body : undefined : undefined

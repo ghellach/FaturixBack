@@ -23,6 +23,10 @@
             "status": 403,
             "message": "account is suspended"
         },
+        "passwordIncorrect": {
+            "status": 403,
+            "message": "password is incorrect"
+        },
         "accountNotActivated": {
             "status": 403,
             "message": "account is not activated"

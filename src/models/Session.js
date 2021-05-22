@@ -8,6 +8,7 @@ const Session = mongoose.Schema({
     },
     token: {
         type: String,
+        unique: true,
         required: true
     },
     status: {
