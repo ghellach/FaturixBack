@@ -15,7 +15,7 @@ export function approvalChecker (user, res) {
     return true;
 }
 
-export async function authCheck(req, res, userNope) {
+export async function authCheck(req, res, userNope, verifySelectedCompany) {
     // rejector function 
     const reject = () => {
         Provider.error(res, "auth", "sessionInvalid");
@@ -32,7 +32,13 @@ export async function authCheck(req, res, userNope) {
 
     //session fetch
     const session = await Mongo.Session.findOne({token: req.body.session});
+
     if(!session || session.status !== 1) return reject();
+
+    if(!session.selectedCompany && !verifySelectedCompany) return Provider.error(res, "auth", "noSelectedCompany")
+    if(session.whichCompany == undefined && !verifySelectedCompany) return Provider.error(res, "auth", "noSelectedCompany");
+
+    
     // user fetch
     const user = await Mongo.User.findById(session.user);
     if(!user) return reject();
@@ -43,5 +49,8 @@ export async function authCheck(req, res, userNope) {
     }
 
     if(userNope) return true;
-    else return user;
+    else return {
+        ...user._doc,
+        company: session.whichCompany
+    }
 }

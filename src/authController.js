@@ -33,12 +33,18 @@ export async function login(req, res) {
             }
         }
 
+
+        // company selection process
+        let hasCompanies = true;
+        const companies = await Mongo.Company.find({user: user._id});
+        if(companies.length === 0) hasCompanies = false;
+
         // token signin
         const token = jwt.sign({ 
             email: user.email,
             firstName: user.firstName, 
             lastName: user.lastName,
-            clientType: req.body.client 
+            clientType: req.body.client,
         }, process.env.JWT, { expiresIn: 60 * 60 * time().hours });
 
         // session creation
@@ -47,12 +53,15 @@ export async function login(req, res) {
             token,
             expiresAt: time().stamp,
             clientType: req.body.client,
-            initialIp: req.connection.remoteAddress
+            initialIp: req.connection.remoteAddress,
         });
 
         await session.save();
 
-        return res.json({session: token});
+        return res.json({
+            session: token,
+            hasCompanies
+        });
 
     }catch(err) {
         console.log(err);
@@ -92,7 +101,7 @@ export async function ping(req, res, ) {
         const {error} = Validator.authValidator.ping(req.body);
         if(error) return Provider.error(res, "main", "val", error);
 
-        if(!await Provider.auth.authCheck(req, res, true)) return;
+        if(!await Provider.auth.authCheck(req, res, true, true)) return;
         else return res.sendStatus(200);
 
     }catch(err) {
@@ -100,6 +109,24 @@ export async function ping(req, res, ) {
         return res.sendStatus(500);
     }
 }
+
+export async function selectCompany(req, res) {
+    try {
+
+        const {error} = Validator.authValidator.ping(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        if(!await Provider.auth.authCheck(req, res, true)) return;
+        else return res.sendStatus(200);
+
+
+
+
+    }catch(err) {
+        console.log(err);
+        return res.sendStatus(500);
+    }
+} 
 
 
 

@@ -11,6 +11,10 @@
         }
     },
     "auth": {
+        "noSelectedCompany": {
+            "status": 400,
+            "message": "no company has been selected"
+        },
         "emailExists": {
             "status": 400,
             "message": "email address is already used by another user"
@@ -34,6 +38,16 @@
         "sessionInvalid": {
             "status": 403,
             "message": "session is invalid"
+        }
+    },
+    "company": {
+        "sameNameCompany": {
+            "status": 403,
+            "message": "same named company for same user"
+        },
+        "notFound": {
+            "status": 404,
+            "message": "company not found"
         }
     }
 }

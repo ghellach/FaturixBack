@@ -4,6 +4,11 @@ const Session = mongoose.Schema({
     user: {
         type: mongoose.Types.ObjectId,
         required: false,
+        ref: "User"
+    },
+    selectedCompany: {
+        type: mongoose.Types.ObjectId,
+        required: false,
         ref: "Company"
     },
     token: {
@@ -20,6 +25,15 @@ const Session = mongoose.Schema({
         type: Boolean,
         required: true,
         default: true,
+    },
+    selectedCompany: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    whichCompany: {
+        type: mongoose.Types.ObjectId,
+        required: false
     },
     createdAt: {
         type: Date,

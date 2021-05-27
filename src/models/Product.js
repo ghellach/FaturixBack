@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import {v4 as uuid} from 'uuid';
 
 const Product = new mongoose.Schema({
-    publicId: {
+    uuid: {
         type: String,
         required: true,
         unique: true,

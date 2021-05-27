@@ -3,7 +3,7 @@ import {v4 as uuid} from 'uuid';
 import randomstring from 'randomstring'
 
 const Invoice = mongoose.Schema({
-    publicId: {
+    uuid: {
         type: String,
         required: true,
         unique: true,
