@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import * as authController from "../authController.js";
 import * as companyController from '../companyController.js';
+import * as invoiceController from "../invoiceController.js";
 import * as userController from '../userController.js';
 
 const router = Router();
@@ -15,5 +16,7 @@ router.post("/company/fetch/company", companyController.fetchCompany);
 router.post("/company/fetch/all", companyController.fetchCompanies);
 
 router.post("/user/select/company", userController.selectCompany);
+
+router.post("/invoice/fetch/all", invoiceController.fetchInvoices);
 
 export default router;
