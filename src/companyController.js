@@ -67,3 +67,27 @@ export async function fetchCompany(req, res) {
         return res.sendStatus(500);
     }
 }
+
+export async function fetchCompanies (req, res) {
+    try {
+
+        const {error} = Validator.authValidator.ping(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        const user = await Provider.auth.authCheck(req, res, false, true);
+        if(!user) return;
+
+        const companies = await Mongo.Company.find({user: user._id}).lean();
+
+        return res.json(companies.map(company => {return{
+            ...company,
+            user: undefined,
+            _id: undefined,
+            __v: undefined
+        }}));
+
+    }catch(err) {
+        console.log(err);
+        return res.sendStatus(500);
+    }
+}

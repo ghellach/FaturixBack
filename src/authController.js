@@ -128,5 +128,22 @@ export async function selectCompany(req, res) {
     }
 } 
 
+export async function logout(req, res) {
+    try {
+        const {error} = Validator.authValidator.ping(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        const session = await Mongo.Session.findOne({token: req.body.session});
+        session.status = 2;
+        await session.save();
+
+        return res.sendStatus(200);
+    }catch(err) {
+        console.log(err);
+        // 200 is intentional :) 
+        return res.sendStatus(200);
+    }
+}
+
 
 
