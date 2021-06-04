@@ -53,7 +53,7 @@ export async function login(req, res) {
             token,
             expiresAt: time().stamp,
             clientType: req.body.client,
-            initialIp: req.connection.remoteAddress,
+            initialIp: req.connection ? req.connection.remoteAddress : "registration",
         });
 
         await session.save();
@@ -90,7 +90,14 @@ export async function newFunction (req, res) {
 
         await user.save();
 
-        return login({...req, body: {email: req.body.email, password: req.body.password, client: req.body.client}}, res);
+        return login({
+            ...req, 
+            connection: {
+                remoteAddress: req.connection.remoteAddress
+            },
+            body: {email: req.body.email, password: req.body.password, client: req.body.client}}, 
+            res
+        );
     }catch(err) {
         return res.sendStatus(500);
     }

@@ -40,6 +40,12 @@
             "message": "session is invalid"
         }
     },
+    "currency": {
+        "notFound": {
+            "status": 404,
+            "message": "currency not found"
+        }
+    },
     "company": {
         "sameNameCompany": {
             "status": 403,
@@ -48,6 +54,16 @@
         "notFound": {
             "status": 404,
             "message": "company not found"
+        }
+    },
+    "product": {
+        "missingTaxInfo": {
+            "status": 400,
+            "message": "tax info is required to add product"
+        },
+        "incorrectTaxFormat": {
+            "status": 400,
+            "message": "tax info formatted incorrectly"
         }
     }
 }

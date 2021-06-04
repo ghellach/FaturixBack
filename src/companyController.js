@@ -26,6 +26,7 @@ export async function addCompany (req, res) {
 
         const session = await Mongo.Session.findOne({token: req.body.session});
         session.selectedCompany = true;
+
         session.whichCompany = company._id;
         await session.save();
 

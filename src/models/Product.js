@@ -1,6 +1,21 @@
 import mongoose from 'mongoose';
 import {v4 as uuid} from 'uuid';
 
+const unitTax = new mongoose.Schema({
+    uuid: {
+        type: String,
+        required: false
+    },
+    names: {
+        type: Object,
+        required: true
+    },
+    rate: {
+        type: Number,
+        required: true
+    }
+})
+
 const Product = new mongoose.Schema({
     uuid: {
         type: String,
@@ -18,26 +33,19 @@ const Product = new mongoose.Schema({
         required: true,
         ref: "Company"
     },
-    names: {
-        type: Object,
+    name: {
+        type: String,
         required: true,
-        default: {
-            en: "Product",
-            fr: "Produit"
-        }
     },
-    price: {
+    unitPrice: {
         type: Number,
         required: true,
     },
     currency: {
-        type: String,
-        required: "cad",
-    },
-    tax: {
         type: mongoose.Types.ObjectId,
-        required: false,
+        required: true,
     },
+    unitTaxes: [unitTax],
     image: {
         type: String,
         required: false,
