@@ -13,6 +13,15 @@ export const add = body => {
     return result;
 }
 
+export const onlyUUID = body => {
+    const schema = Joi.object({
+        session: Joi.string().required(),
+        uuid: Joi.string().required(),
+    });
+    const result = schema.validate(body);
+    return result;
+}
+
 export const updateQuantity = body => {
     const schema = Joi.object({
         session: Joi.string().required(),

@@ -32,6 +32,7 @@ router.post("/invoice/fetch/all", invoiceController.fetchInvoices);
 
 // products
 router.post("/product/add", productController.addProduct);
+router.post("/product/fetch", productController.fetch);
 router.post("/product/fetch/all", productController.fetchProducts);
 router.post("/product/update/quantity", productController.updateQuantity);
 

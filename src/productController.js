@@ -17,6 +17,8 @@ export async function addProduct(req, res) {
         if(req.body.previousBlock) {
             previous = await Mongo.Product.findOne({uuid: String(req.body.previousBlock)});
             if(!previous) return Provider.error(res, "product", "previousBlockNotFound");
+            const checkIfPreviousIsChained = await Mongo.Product.findOne({previousBlock: previous._id});
+            if(checkIfPreviousIsChained) return res.sendStatus(403);
             if(!Provider.product.isOwned(res, user, previous)) return;
             previous.updatedAt = new Date;
             previous.status = 4;
@@ -57,13 +59,23 @@ export async function addProduct(req, res) {
         // product creation
         const product = new Mongo.Product({
             name: req.body.name,
-            unitPrice: Number(req.body.unitPrice),
+            unitPrice: Number(req.body.unitPrice).toFixed(2),
             unitTaxes,
             currency: currency._id,
             company: user.company,
             user: user._id,
-            previousBlock: previous._id
+            previousBlock: previous._id,
         });
+
+        await product.save();
+
+        // set inheritance and chaining health
+        product.motherBlock = product.previousBlock ? previous.motherBlock : product._id;
+        if(product.motherBlock !== product._id) {
+            const mother = await Mongo.Product.findById(product.motherBlock);
+            mother.latestBlock = product._id;
+            await mother.save();
+        }
 
         await product.save();
     
@@ -91,7 +103,9 @@ export async function fetchProducts(req, res) {
         if(!user) return;
 
         // products
-        const fetch = await Mongo.Product.find({company: user.company}).lean();
+        const raw = await Mongo.Product.find({company: user.company}).sort([["createdAt", -1]]).lean();
+        let fetch = []; 
+        raw.forEach(one => one.status !== 4 ? fetch.push(one) : null);
 
         const products = await Promise.all(fetch.map(async product => {
             const currency = await Mongo.Currency.findById(product.currency).lean();
@@ -102,11 +116,66 @@ export async function fetchProducts(req, res) {
                     ...currency,
                     _id: undefined
                 },
-                actionsArchive: product.actionsArchive ? product.actionsArchive.reverse() : []
+                actionsArchive: undefined //product.actionsArchive ? product.actionsArchive.reverse() : []
             }
         }));
 
         return res.json(products);
+    }catch(err) {
+        console.log(err);
+        return res.sendStatus(500);
+    }
+}
+
+export async function fetch(req, res) {
+    try {
+        const {error} = Validator.productValidator.onlyUUID(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        // user fetch
+        const user = await Provider.auth.authCheck(req, res);
+        if(!user) return;
+
+        const product = await Mongo.Product.findOne({uuid: req.body.uuid}).lean();
+        if(!product) return Provider.error(res, "product", "notFound");
+        if(!Provider.product.isOwned(res, user, product)) return;
+
+        const currency = await Mongo.Currency.findById(product.currency).lean();
+
+        // fetches previous blocks meta data
+        const archive = {
+            previousBlocks: [],
+            actionsArchive: product.actionsArchive ? product.actionsArchive.reverse().map(p => Object({...p, _id: undefined})) : []
+        };
+
+        const blockJob = async id => {
+            const self = await Mongo.Product.findById(id).lean();
+            if(!self) return;
+
+            // add to archive
+            archive.previousBlocks.push({uuid: self.uuid, createdAt: self.createdAt});
+            if(self.actionsArchive) archive.actionsArchive.push(self.actionsArchive.reverse())
+            if(self.previousBlock) await blockJob(self.previousBlock)
+        }
+
+        if(product.previousBlock) await blockJob(product.previousBlock)
+        console.log(product.user);
+        const finalObject = {
+            ...product,
+            _id: undefined,
+            currency: {
+                ...currency,
+                _id: undefined
+            },
+            unitTaxes: product.unitTaxes.map(t => Object({...t, _id: undefined})),
+            user: (await Mongo.User.findById(product.user)).uuid,
+            company: (await Mongo.Company.findById(product.company)).uuid,
+            previousBlock: undefined,
+            actionsArchive: archive,
+            __v: undefined
+        }
+
+        return res.json(finalObject);
     }catch(err) {
         console.log(err);
         return res.sendStatus(500);

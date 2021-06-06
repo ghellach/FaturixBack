@@ -83,6 +83,14 @@ const Product = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: false,
     },
+    motherBlock: {
+        type: mongoose.Types.ObjectId,
+        required: false,
+    },
+    latestBlock: {
+        type: mongoose.Types.ObjectId,
+        required: false,
+    },
     quantity: {
         type: Number,
         required: true,
