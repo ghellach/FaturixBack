@@ -57,6 +57,10 @@
         }
     },
     "product": {
+        "notFound": {
+            "status": 404,
+            "message": "product not found"
+        },
         "missingTaxInfo": {
             "status": 400,
             "message": "tax info is required to add product"
@@ -64,6 +68,19 @@
         "incorrectTaxFormat": {
             "status": 400,
             "message": "tax info formatted incorrectly"
+        },
+        "previousBlockNotFound": {
+            "status": 400,
+            "message": "previous block on the product chain could not be found"
+        },
+        "cannotUpdate": {
+            "status": 400,
+            "message": "product cannot be edited",
+            "body": true
+        },
+        "sameState": {
+            "status": 400,
+            "message": "same state as before"
         }
     }
 }
