@@ -65,6 +65,9 @@ export async function addProduct(req, res) {
             company: user.company,
             user: user._id,
             previousBlock: previous._id,
+            actionsArchive: previous._id ? {
+                type: "productUpdate"
+            } : undefined
         });
 
         await product.save();
@@ -109,6 +112,8 @@ export async function fetchProducts(req, res) {
 
         const products = await Promise.all(fetch.map(async product => {
             const currency = await Mongo.Currency.findById(product.currency).lean();
+            const motherBlock = await Mongo.Product.findById(product.motherBlock).lean();
+            const latestBlock = await Mongo.Product.findById(motherBlock.latestBlock).lean();
             return {
                 ...product,
                 _id: undefined,
@@ -116,7 +121,13 @@ export async function fetchProducts(req, res) {
                     ...currency,
                     _id: undefined
                 },
-                actionsArchive: undefined //product.actionsArchive ? product.actionsArchive.reverse() : []
+                unitTaxes: product.unitTaxes.map(t => Object({...t, _id: undefined})),
+                user: (await Mongo.User.findById(product.user)).uuid,
+                company: (await Mongo.Company.findById(product.company).lean()).uuid,
+                previousBlock: undefined,
+                actionsArchive: undefined, //product.actionsArchive ? product.actionsArchive.reverse() : []
+                motherBlock: motherBlock.uuid,
+                latestBlock: latestBlock.uuid,
             }
         }));
 
@@ -154,12 +165,16 @@ export async function fetch(req, res) {
 
             // add to archive
             archive.previousBlocks.push({uuid: self.uuid, createdAt: self.createdAt});
-            if(self.actionsArchive) archive.actionsArchive.push(self.actionsArchive.reverse())
+            if(self.actionsArchive) archive.actionsArchive.push(...self.actionsArchive.reverse())
             if(self.previousBlock) await blockJob(self.previousBlock)
         }
 
         if(product.previousBlock) await blockJob(product.previousBlock)
-        console.log(product.user);
+        
+        //mother and lastest fetch
+        const motherBlock = await Mongo.Product.findById(product.motherBlock).lean();
+        const latestBlock = await Mongo.Product.findById(motherBlock.latestBlock).lean();
+
         const finalObject = {
             ...product,
             _id: undefined,
@@ -172,7 +187,9 @@ export async function fetch(req, res) {
             company: (await Mongo.Company.findById(product.company)).uuid,
             previousBlock: undefined,
             actionsArchive: archive,
-            __v: undefined
+            __v: undefined,
+            motherBlock: motherBlock.uuid,
+            latestBlock: latestBlock.uuid
         }
 
         return res.json(finalObject);
@@ -242,5 +259,3 @@ export async function updateStatus(req, res) {
         return res.sendStatus(500);
     }
 }
-
-
