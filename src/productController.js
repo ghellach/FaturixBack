@@ -1,7 +1,6 @@
 import Mongo from './models/_main.js';
 import Validator from './validators/_main.js';
 import Provider from './providers/_main.js';
-import moment from 'moment';
 
 export async function addProduct(req, res) {
     try {
@@ -13,9 +12,11 @@ export async function addProduct(req, res) {
         if(!user) return;
 
         // check if previous block in the chain
-        let previous = {};
+        let previous = {quantity: 0};
+        let previousStatus = 2;
         if(req.body.previousBlock) {
             previous = await Mongo.Product.findOne({uuid: String(req.body.previousBlock)});
+            previousStatus = previous.status;
             if(!previous) return Provider.error(res, "product", "previousBlockNotFound");
             const checkIfPreviousIsChained = await Mongo.Product.findOne({previousBlock: previous._id});
             if(checkIfPreviousIsChained) return res.sendStatus(403);
@@ -64,6 +65,8 @@ export async function addProduct(req, res) {
             currency: currency._id,
             company: user.company,
             user: user._id,
+            quantity: previous.quantity,
+            status: previousStatus,
             previousBlock: previous._id,
             actionsArchive: previous._id ? {
                 type: "productUpdate"
@@ -126,8 +129,8 @@ export async function fetchProducts(req, res) {
                 company: (await Mongo.Company.findById(product.company).lean()).uuid,
                 previousBlock: undefined,
                 actionsArchive: undefined, //product.actionsArchive ? product.actionsArchive.reverse() : []
-                motherBlock: motherBlock.uuid,
-                latestBlock: latestBlock.uuid,
+                motherBlock: motherBlock?.uuid,
+                latestBlock: latestBlock?.uuid,
             }
         }));
 
@@ -188,8 +191,8 @@ export async function fetch(req, res) {
             previousBlock: undefined,
             actionsArchive: archive,
             __v: undefined,
-            motherBlock: motherBlock.uuid,
-            latestBlock: latestBlock.uuid
+            motherBlock: motherBlock?.uuid,
+            latestBlock: latestBlock?.uuid
         }
 
         return res.json(finalObject);

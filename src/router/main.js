@@ -10,8 +10,8 @@ import * as userController from '../userController.js';
 const router = Router();
 
 // meta data fetch
-router.post("/meta/tax/fetch", metaDataController.fetchTaxes);
-router.post("/meta/currency/fetch", metaDataController.fetchCurrencies);
+router.post("/meta/taxes/fetch", metaDataController.fetchTaxes);
+router.post("/meta/currencies/fetch", metaDataController.fetchCurrencies);
 
 // auth
 router.post("/auth/login", authController.login);
