@@ -24,18 +24,28 @@ export async function draftInvoice(req, res) {
         else {
             const invoiceModel = await Provider.invoice.toMongoIds(invoiceModelFetch);
 
-            console.log(invoiceModel);
+            if(req.body.invoice) {
+                const invoice = await Mongo.Invoice.findOne({uuid: req.body.invoice});
+                invoice.user = user._id;
+                invoice.currency = invoiceModel.currency;
+                invoice.sums = invoiceModel.sums;
+                invoice.grossTaxes = invoiceModel.grossTaxes;
+                invoice.products = invoiceModel.products;
+                await invoice.save();
+            }else {
+                const invoice = new Mongo.Invoice({
+                    company: user.company,
+                    user: user._id,
+                    currency: invoiceModel.currency,
+                    sums: invoiceModel.sums,
+                    grossTaxes: invoiceModel.grossTaxes,
+                    products: invoiceModel.products
+                });
+        
+                await invoice.save();
+            }
     
-            const invoice = new Mongo.Invoice({
-                company: user.company,
-                user: user._id,
-                currency: invoiceModel.currency,
-                sums: invoiceModel.sums,
-                grossTaxes: invoiceModel.grossTaxes,
-                products: invoiceModel.products
-            });
-    
-            await invoice.save();
+            
             return res.json({saved: true});
         }
     }catch(err) {
