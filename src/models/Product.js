@@ -104,4 +104,6 @@ const Product = new mongoose.Schema({
     actionsArchive: [actionArchive]
 });
 
+Product.index({ name: 1, type: 1 });
+
 export default mongoose.model("Product", Product);

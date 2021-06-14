@@ -32,3 +32,13 @@ export const updateQuantity = body => {
     const result = schema.validate(body);
     return result;
 }
+
+export const search = body => {
+    const schema = Joi.object({
+        session: Joi.string().required(),
+        search: Joi.string().required(),
+        currency: Joi.string().required()
+    });
+    const result = schema.validate(body);
+    return result;
+}

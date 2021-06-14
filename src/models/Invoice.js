@@ -104,6 +104,11 @@ const Invoice = mongoose.Schema({
         required: true,
         default: () => new Date()
     },
+    archive: {
+        type: Array,
+        required: true,
+        default: []
+    }
 });
 
 export default mongoose.model("Invoice", Invoice);

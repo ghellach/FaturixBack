@@ -19,18 +19,23 @@ export async function draftInvoice(req, res) {
         let initialProducts = req.body.products;
         let initialTaxes = req.body.taxes;
 
-        const invoiceModelFetch = await Provider.invoice.invoiceModeller(res, req.body.currency, initialProducts, initialTaxes, req.body.invoice ? false : true);
+        const invoiceInit = req.body.invoice ? await Mongo.Invoice.findOne({uuid: req.body?.invoice}) : null;
+        if(!invoiceInit && req.body.invoice) return Provider.error(res, "invoice", "notFound")
+
+        const invoiceModelFetch = await Provider.invoice.invoiceModeller(res, req.body.currency, initialProducts, initialTaxes, false, false, user);
         if(!invoiceModelFetch) return;
         else {
             const invoiceModel = await Provider.invoice.toMongoIds(invoiceModelFetch);
 
             if(req.body.invoice) {
-                const invoice = await Mongo.Invoice.findOne({uuid: req.body.invoice});
+                const invoice = invoiceInit;
+                invoice.archive = [...invoiceInit._doc.archive, {...invoiceInit._doc}];
                 invoice.user = user._id;
                 invoice.currency = invoiceModel.currency;
                 invoice.sums = invoiceModel.sums;
                 invoice.grossTaxes = invoiceModel.grossTaxes;
                 invoice.products = invoiceModel.products;
+                invoice.updatedAt = new Date();
                 await invoice.save();
             }else {
                 const invoice = new Mongo.Invoice({

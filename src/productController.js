@@ -1,6 +1,7 @@
 import Mongo from './models/_main.js';
 import Validator from './validators/_main.js';
 import Provider from './providers/_main.js';
+import lunr from 'lunr';
 
 export async function addProduct(req, res) {
     try {
@@ -242,19 +243,30 @@ export async function updateQuantity(req, res) {
     }
 }
 
-export async function updateStatus(req, res) {
+export async function search(req, res) {
     try {
-        const {error} = Validator.productValidator.updateQuantity(req.body);
+        const {error} = Validator.productValidator.search(req.body);
         if(error) return Provider.error(res, "main", "val", error);
 
         // user fetch
         const user = await Provider.auth.authCheck(req, res);
         if(!user) return;
 
-        // product fetch actions
-        const product = await Mongo.Product.findOne({uuid: req.body.uuid});
-        if(!product) return Provider.error(res, "product", "notFound");
-        if(!Provider.product.isOwned(res, user, product)) return;
+        // products fetch
+        const products = await Mongo.Product
+            .find({
+                company: user.company, 
+                currency: (await Mongo.Currency.findOne({uuid: req.body?.currency}))?._id,
+                status: {$lte: 2}, 
+                name: { "$regex": req.body.search, "$options": "i" }
+            }
+        )
+        .sort([["name", 1]])
+        .lean();
+
+        return res.json(await Promise.all(products.map(async p => {
+            return await Provider.product.singleProductParser(p);
+        })));
         
 
     }catch(err) {

@@ -92,6 +92,11 @@
             "status": 400,
             "message": "product not available",
             "body": true
+        },
+        "notFound": {
+            "status": 400,
+            "message": "invoice not found",
+            "body": true
         }
     }
 }

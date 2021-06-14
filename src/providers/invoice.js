@@ -1,8 +1,8 @@
 import Mongo from '../models/_main.js';
 import Provider from './_main.js';
 
-async function productProvider (uuid, checkAvailability) {
-    const p = await Mongo.Product.findOne({uuid, status: checkAvailability ? {$lte: 1} : undefined}).lean();
+async function productProvider (uuid, checkAvailability, company) {
+    const p = await Mongo.Product.findOne({uuid, company, status: checkAvailability ? {$lte: 1} : {$lte: 2}}).lean();
     if(!p) return false;
     else return p;
 }
@@ -22,7 +22,7 @@ async function errorHandler(code, res, par) {
     return false;
 }
 
-export async function invoiceModeller (res, cur, initialProducts, initialTaxes, checkAvailability) {
+export async function invoiceModeller (res, cur, initialProducts, initialTaxes, checkAvailability, checkQuantity, user) {
 
     /*
         takes in: res object, initial products and initial taxes
@@ -35,9 +35,11 @@ export async function invoiceModeller (res, cur, initialProducts, initialTaxes, 
         let taxesBody = [];
         let rejectT = false;
 
+        // currencty checl
         const currency = await currencyProvider(cur);
         if(!currency) return errorHandler("badParams", res);
 
+        // used taxes maper
         await Promise.all(initialTaxes.map(async tax => {
             if(rejectT) return;
             const fetch = await taxProvider(tax);
@@ -58,13 +60,13 @@ export async function invoiceModeller (res, cur, initialProducts, initialTaxes, 
             // prevent crash by checking previous error
             if(rejectP) return false;
 
-            const product = await productProvider(ident.uuid, checkAvailability);
+            const product = await productProvider(ident.uuid, checkAvailability, user.company);
             if(!product) {
                 rejectP = true;
                 return errorHandler("notAvailable", res, ident.uuid);
             }
 
-            if(checkAvailability && product.status !== 0) if(!ident.quantity || ident?.quantity > product.quantity) {
+            if(checkQuantity && product.status !== 0) if(!ident.quantity || ident?.quantity > product.quantity) {
                 rejectP = true;
                 return Provider.error(res, "invoice", "notAvailable", product.uuid);
             }
