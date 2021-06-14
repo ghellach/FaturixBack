@@ -1,21 +1,28 @@
 import Mongo from '../models/_main.js';
 import Provider from './_main.js';
 
-async function productProvider (uuid) {
-    return await Mongo.Product.findOne({uuid}).lean();
+async function productProvider (uuid, checkAvailability) {
+    const p = await Mongo.Product.findOne({uuid, status: checkAvailability ? {$lte: 1} : undefined}).lean();
+    if(!p) return false;
+    else return p;
 }
 
 async function taxProvider(uuid) {
     return await Mongo.Tax.findOne({uuid}).lean()
 }
 
-async function errorHandler(code) {
+async function currencyProvider(currency) {
+    return await Mongo.Currency.findOne({uuid: currency})
+}
+
+async function errorHandler(code, res, par) {
     if(code === "badParams") Provider.error(res, "invoice", "badParams");
+    else if(code === "notAvailable") Provider.error(res, "invoice", "notAvailable", {uuid: par});
     else return false;
     return false;
 }
 
-export async function invoiceModeller (res, initialProducts, initialTaxes) {
+export async function invoiceModeller (res, cur, initialProducts, initialTaxes, checkAvailability) {
 
     /*
         takes in: res object, initial products and initial taxes
@@ -27,35 +34,40 @@ export async function invoiceModeller (res, initialProducts, initialTaxes) {
         let taxes = [];
         let taxesBody = [];
         let rejectT = false;
+
+        const currency = await currencyProvider(cur);
+        if(!currency) return errorHandler("badParams", res);
+
         await Promise.all(initialTaxes.map(async tax => {
             if(rejectT) return;
             const fetch = await taxProvider(tax);
             if(!fetch) {
-                rejectP = true;
-                return errorHandler("badParams");
+                rejectT = true;
+                console.log(tax);
+                return errorHandler("badParams", res);
             }else {
                 taxes.push(fetch.uuid);
                 taxesBody.push(fetch);
             }
         }));
-        if(rejectT) return;
+        if(rejectT) return false;
 
         // products fetch
         let rejectP = false;
         const products = await Promise.all(initialProducts.map(async (ident) => {
             // prevent crash by checking previous error
-            if(rejectP) return;
+            if(rejectP) return false;
 
-            const product = await productProvider(ident.uuid);
+            const product = await productProvider(ident.uuid, checkAvailability);
             if(!product) {
                 rejectP = true;
-                return errorHandler("badParams");
+                return errorHandler("notAvailable", res, ident.uuid);
             }
 
-            // if(!ident.quantity || ident?.quantity > product.quantity) {
-            //     rejectP = true;
-            //     return Provider.error(res, "invoice", "quantityOverflow", {uuid: product.uuid});
-            // }
+            if(checkAvailability && product.status !== 0) if(!ident.quantity || ident?.quantity > product.quantity) {
+                rejectP = true;
+                return Provider.error(res, "invoice", "notAvailable", product.uuid);
+            }
 
             const quantity = ident.quantity;
             const unitPrice = ident.unitPrice ? ident.unitPrice : product.unitPrice;
@@ -129,7 +141,7 @@ export async function invoiceModeller (res, initialProducts, initialTaxes) {
 
         }));
 
-        if(rejectP) return;
+        if(rejectP) return false;
 
         const finalTaxes = taxesBody.map(tax => {
             let sum = 0;
@@ -154,6 +166,7 @@ export async function invoiceModeller (res, initialProducts, initialTaxes) {
         let grossTotal = subTotal + taxesTotal;
 
         const body = {
+            currency: currency._id,
             sums: {
                 taxesTotal: Number(taxesTotal).toFixed(2),
                 subTotal: Number(subTotal).toFixed(2),
@@ -173,6 +186,7 @@ export async function invoiceModeller (res, initialProducts, initialTaxes) {
 export async function toMongoIds (body) {
     
     return {
+        ...body,
         sums: body.sums,
         grossTaxes: await Promise.all(body.grossTaxes.map(async tax => {
             return {

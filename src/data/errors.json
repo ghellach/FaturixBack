@@ -88,9 +88,9 @@
             "status": 400,
             "message": "params wrong at source"
         },
-        "quantityOverflow": {
+        "notAvailable": {
             "status": 400,
-            "message": "quantity overflow",
+            "message": "product not available",
             "body": true
         }
     }

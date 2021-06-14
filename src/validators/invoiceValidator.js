@@ -7,7 +7,8 @@ export const addInvoice = (body) => {
         currency: Joi.string().uuid().required(),
         taxes: Joi.array().required(),
         customerDetails: Joi.object().required(),
-        reduction: Joi.object()
+        reduction: Joi.object(),
+        invoice: Joi.string().uuid()
     });
     const result = schema.validate(body);
     return result;
