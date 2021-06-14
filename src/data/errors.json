@@ -82,5 +82,16 @@
             "status": 400,
             "message": "same state as before"
         }
+    },
+    "invoice": {
+        "badParams": {
+            "status": 400,
+            "message": "params wrong at source"
+        },
+        "quantityOverflow": {
+            "status": 400,
+            "message": "quantity overflow",
+            "body": true
+        }
     }
 }

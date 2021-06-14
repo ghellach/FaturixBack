@@ -109,7 +109,7 @@ export async function fetchProducts(req, res) {
         if(!user) return;
 
         // products
-        const raw = await Mongo.Product.find({company: user.company}).sort([["createdAt", -1]]).lean();
+        const raw = await Mongo.Product.find({company: user.company}).sort([["name", 1]]).lean();
         let fetch = []; 
         raw.forEach(one => one.status !== 4 ? fetch.push(one) : null);
 

@@ -2,7 +2,6 @@ import Provider from './_main.js';
 
 export function isOwned (res, u, p) {
     if(String(u.company) !== String(p.company)) return Provider.error(res, "product", "notFound");
-    console.log("here")
     return true;
 }
 
