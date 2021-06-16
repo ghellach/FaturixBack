@@ -210,7 +210,7 @@ export async function toMongoIds (body) {
                         }
                     }))
                 },
-                total: {
+                total: { 
                     ...product.total,
                     taxes: await Promise.all(product.total.taxes.map(async tax => {
                         const t = await Mongo.Tax.findOne({uuid: tax.uuid}).lean();
@@ -224,4 +224,60 @@ export async function toMongoIds (body) {
             }
         }))
     }
+}
+
+export async function invoiceViewer (invoice) {
+    //currenct
+    const currency = await Mongo.Currency.findById(invoice.currency).lean()
+    if(!currency) return Provider.error(res, "invoice", "badParams")
+
+    const taxes = [];
+    await Promise.all(invoice.grossTaxes.map(async brut => {
+        if(brut._id) {
+            const tax = await Mongo.Tax.findById(brut._id).lean();
+            taxes.push({
+                ...brut,
+                uuid: tax.uuid,
+                _id: undefined
+            })
+        }
+    }));
+
+    const unproducts = [];
+    await Promise.all(invoice.products.map(async init => {
+        const product = await Mongo.Product.findById(init._id).lean();
+        const processed = await Provider.product.singleProductParser(product);
+
+        unproducts.push({
+            item: {...processed, quantity: init.quantity},
+            product: {...processed}
+        });
+    }));
+
+    const items = unproducts.map(p => p.item);
+    const products = unproducts.map(p => p.product);
+
+    const body = {
+        uuid: invoice.uuid,
+        currency: {
+            isoSign: currency.isoSign,
+            isoName: currency.isoName,
+            uuid: currency.uuid,
+        },
+        taxes: taxes.map(t => t.uuid),
+        taxesFull: taxes,
+        items,
+        products,
+        customerDetails: invoice.customerDetails,
+        user: (await Mongo.User.findById(invoice.user)).uuid,
+        createdAt: invoice.createdAt,
+        updatedAt: invoice.updatedAt,
+        finalized: invoice.finalized,
+        paid: invoice.paid,
+        sums: {...invoice.sums, _id: undefined},
+        // TODO
+        customerDetails: invoice.customerDetails
+    }
+
+    return body;
 }

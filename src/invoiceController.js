@@ -36,7 +36,10 @@ export async function draftInvoice(req, res) {
                 invoice.grossTaxes = invoiceModel.grossTaxes;
                 invoice.products = invoiceModel.products;
                 invoice.updatedAt = new Date();
+                invoice.customerDetails = req.body.customerDetails;
                 await invoice.save();
+
+                return res.json({invoice: invoice.uuid}); 
             }else {
                 const invoice = new Mongo.Invoice({
                     company: user.company,
@@ -44,18 +47,42 @@ export async function draftInvoice(req, res) {
                     currency: invoiceModel.currency,
                     sums: invoiceModel.sums,
                     grossTaxes: invoiceModel.grossTaxes,
-                    products: invoiceModel.products
+                    products: invoiceModel.products,
+                    customerDetails: req.body.customerDetails
                 });
         
                 await invoice.save();
+
+                return res.json({invoice: invoice.uuid});
             }
     
             
-            return res.json({saved: true});
+            
         }
     }catch(err) {
         console.log(err);
         return res.sendStatus(500);
+    }
+}
+
+export async function fetchOne(req, res) {
+    try {
+        const {error} = Validator.invoiceValidator.fetchOne(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        // user fetch
+        const user = await Provider.auth.authCheck(req, res);
+        if(!user) return;
+
+        // invoices 
+        const invoice = await Mongo.Invoice.findOne({uuid: req.body.invoice, company: user.company}).lean();
+        if(!invoice) return Provider.error(res, "invoice", "notFound", {invoice: req.body.invoice})
+
+        const invoiceViewer = await Provider.invoice.invoiceViewer(invoice);
+
+        return res.json(invoiceViewer);
+    }catch(err) {
+        console.log(err);
     }
 }
 
@@ -69,9 +96,14 @@ export async function fetchInvoices(req, res) {
         if(!user) return;
 
         // invoices 
-        const invoices = await Mongo.Invoice.find({company: user.company});
+        const fetch = await Mongo.Invoice.find({company: user.company});
 
-        return res.json(invoices);
+        // const invoices = [];
+        // await Promise.all(fetch.map(async invoice => invoices.push(await Provider.invoice.invoiceViewer(invoice))))
+
+        // return res.json(invoices);
+
+        return res.json(fetch);
     }catch(err) {
         console.log(err);
     }

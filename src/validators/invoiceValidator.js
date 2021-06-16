@@ -13,3 +13,12 @@ export const addInvoice = (body) => {
     const result = schema.validate(body);
     return result;
 }
+
+export const fetchOne = (body) => {
+    const schema = Joi.object({
+        session: Joi.string().required(),
+        invoice: Joi.string().uuid()
+    });
+    const result = schema.validate(body);
+    return result;
+}

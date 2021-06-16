@@ -92,7 +92,10 @@ const Invoice = mongoose.Schema({
     },
     customerDetails: {
         type: Object,
-        required: false
+        required: true,
+        default: {
+            
+        }
     },
     createdAt: {
         type: Date,
