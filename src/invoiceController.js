@@ -22,7 +22,7 @@ export async function draftInvoice(req, res) {
         const invoiceInit = req.body.invoice ? await Mongo.Invoice.findOne({uuid: req.body?.invoice}) : null;
         if(!invoiceInit && req.body.invoice) return Provider.error(res, "invoice", "notFound")
 
-        const invoiceModelFetch = await Provider.invoice.invoiceModeller(res, req.body.currency, initialProducts, initialTaxes, false, false, user);
+        const invoiceModelFetch = await Provider.invoice.invoiceModeller(res, req.body.currency, initialProducts, initialTaxes, false, false, user, req.body.reduction);
         if(!invoiceModelFetch) return;
         else {
             const invoiceModel = await Provider.invoice.toMongoIds(invoiceModelFetch);
@@ -35,6 +35,8 @@ export async function draftInvoice(req, res) {
                 invoice.sums = invoiceModel.sums;
                 invoice.grossTaxes = invoiceModel.grossTaxes;
                 invoice.products = invoiceModel.products;
+                invoice.reduction = invoiceModel?.reduction;
+                invoice.notes = invoiceModel?.notes;
                 invoice.updatedAt = new Date();
                 invoice.customerDetails = req.body.customerDetails;
                 await invoice.save();
@@ -48,6 +50,8 @@ export async function draftInvoice(req, res) {
                     sums: invoiceModel.sums,
                     grossTaxes: invoiceModel.grossTaxes,
                     products: invoiceModel.products,
+                    reduction: invoiceModel?.reduction,
+                    notes: invoiceModel?.notes,
                     customerDetails: req.body.customerDetails
                 });
         

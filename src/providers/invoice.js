@@ -22,7 +22,7 @@ async function errorHandler(code, res, par) {
     return false;
 }
 
-export async function invoiceModeller (res, cur, initialProducts, initialTaxes, checkAvailability, checkQuantity, user) {
+export async function invoiceModeller (res, cur, initialProducts, initialTaxes, checkAvailability, checkQuantity, user, reduction) {
 
     /*
         takes in: res object, initial products and initial taxes
@@ -167,6 +167,16 @@ export async function invoiceModeller (res, cur, initialProducts, initialTaxes, 
         products.forEach(p => subTotal = subTotal + p.total.subTotal);
         let grossTotal = subTotal + taxesTotal;
 
+        if(reduction) {
+            if(reduction.type === 0) {
+                grossTotal = grossTotal * 0.01*(100-Number(reduction.payload))
+            }
+            else if (reduction.type === 2) {
+                if(reduction.payload >= grossTotal) grossTotal = 0
+                else grossTotal = grossTotal - Number(reduction.payload)
+            }
+        }
+
         const body = {
             currency: currency._id,
             sums: {
@@ -174,6 +184,7 @@ export async function invoiceModeller (res, cur, initialProducts, initialTaxes, 
                 subTotal: Number(subTotal).toFixed(2),
                 grossTotal: Number(grossTotal).toFixed(2)
             },
+            reduction,
             grossTaxes: [...finalTaxes, ...finalOtherTaxes],
             products
         }
@@ -274,6 +285,8 @@ export async function invoiceViewer (invoice) {
         updatedAt: invoice.updatedAt,
         finalized: invoice.finalized,
         paid: invoice.paid,
+        reduction: invoice?.reduction,
+        notes: invoice?.notes,
         sums: {...invoice.sums, _id: undefined},
         // TODO
         customerDetails: invoice.customerDetails

@@ -90,6 +90,23 @@ const Invoice = mongoose.Schema({
         required: true,
         default: false,
     },
+    reduction: mongoose.Schema({
+        type: {
+            type: Number,
+            required: true,
+            default: 0
+        },
+        payload: {
+            type: Number,
+            required: true,
+            default: 0
+        }
+    }),
+    notes: {
+        type: String,
+        required: false,
+        max: 5000
+    },
     customerDetails: {
         type: Object,
         required: true,
