@@ -256,7 +256,10 @@ export async function invoiceViewer (invoice) {
 
     const unproducts = [];
     await Promise.all(invoice.products.map(async init => {
-        const product = await Mongo.Product.findById(init._id).lean();
+        const fetch = await Mongo.Product.findById(init._id).lean();
+        const product = !invoice.finalized && fetch.latestBlock
+        ? await Mongo.Product.findById(fetch.latestBlock).lean()
+        : fetch;
         const processed = await Provider.product.singleProductParser(product);
 
         unproducts.push({
@@ -269,6 +272,7 @@ export async function invoiceViewer (invoice) {
     const products = unproducts.map(p => p.product);
 
     const body = {
+        number: invoice.number,
         uuid: invoice.uuid,
         currency: {
             isoSign: currency.isoSign,
@@ -285,6 +289,7 @@ export async function invoiceViewer (invoice) {
         updatedAt: invoice.updatedAt,
         finalized: invoice.finalized,
         paid: invoice.paid,
+        refunded: invoice.refunded,
         reduction: invoice?.reduction,
         notes: invoice?.notes,
         sums: {...invoice.sums, _id: undefined},

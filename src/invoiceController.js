@@ -100,16 +100,86 @@ export async function fetchInvoices(req, res) {
         if(!user) return;
 
         // invoices 
-        const fetch = await Mongo.Invoice.find({company: user.company});
+        const fetch = await Mongo.Invoice.find({company: user.company}).lean();
 
         // const invoices = [];
         // await Promise.all(fetch.map(async invoice => invoices.push(await Provider.invoice.invoiceViewer(invoice))))
 
-        // return res.json(invoices);
+        return res.json(await Promise.all(fetch.map(async invoice => Object({
+            uuid: invoice.uuid,
+            sums: invoice.sums,
+            reduction: invoice.reduction,
+            finalized: invoice.finalized,
+            refunded: invoice.refunded,
+            productsCount: Array(...invoice.products).length,
+            number: invoice.number,
+            createdAt: invoice.createdAt,
+            updatedAt: invoice.updatedAt,
+            customer: invoice.customerDetails,
+            currency: Object({
+                ...(await Mongo.Currency.findById(invoice.currency).lean()),
+                
+                _id: undefined
+            })
+        }))));
 
-        return res.json(fetch);
     }catch(err) {
         console.log(err);
+    }
+}
+
+export async function finalizeInvoice (req, res) {
+    try {
+        const {error} = Validator.invoiceValidator.fetchOne(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        // user fetch
+        const user = await Provider.auth.authCheck(req, res);
+        if(!user) return;
+
+        const invoiceRaw = await Mongo.Invoice.findOne({uuid: req.body.invoice, company: user.company});
+        if(invoiceRaw.finalized) return Provider.error(res, "invoice", "alreadyFinalized");
+
+        if(!invoiceRaw.customerDetails?.email && !invoiceRaw.customerDetails.phone) return Provider.error(res, "invoice", "noCustomer");
+
+
+        const invoice = await Provider.invoice.invoiceViewer(invoiceRaw);
+
+        let stop = false;
+        let which = "";
+        invoice.items.forEach(item => invoice.products.forEach(product => {
+            console.log(item.quantity, product.quantity)
+            if(item.quantity > product.quantity && !stop && item.status !== 0) {
+                stop = true;
+                which = item.uuid;
+            }
+        }));
+        
+        if(stop) return Provider.error(res, "invoice", "quantityOverflow", {uuid: which});
+
+        let failed = false;
+        await Promise.all(invoice.items.map(async item => {
+            const product = await Mongo.Product.findOne({uuid: item.uuid});
+            if(!product) {
+                failed = true;
+                return;
+            }
+            if(item.status !== 0) product.quantity = product.quantity - item.quantity
+            await product.save();
+            return;
+        }));
+        if(failed) return res.sendStatus(500);
+
+        invoiceRaw.finalized = true;
+        await invoiceRaw.save();
+
+        return res.json({
+            invoice: invoiceRaw.uuid
+        });
+
+    }catch(err) {
+        console.log(err);
+        return res.sendStatus(500);
     }
 }
 

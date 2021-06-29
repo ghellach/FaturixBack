@@ -90,6 +90,11 @@ const Invoice = mongoose.Schema({
         required: true,
         default: false,
     },
+    refunded: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
     reduction: mongoose.Schema({
         type: {
             type: Number,

@@ -97,6 +97,19 @@
             "status": 400,
             "message": "invoice not found",
             "body": true
+        },
+        "noCustomer": {
+            "status": 400,
+            "message": "customer details not available"
+        },
+        "quantityOverflow": {
+            "status": 400,
+            "message": "requested quantity more than available quantity",
+            "body": true
+        },
+        "alreadyFinalized": {
+            "status": 400,
+            "message": "invoice already finalized"
         }
     }
 }
