@@ -31,6 +31,7 @@ router.post("/user/select/company", userController.selectCompany);
 router.post("/invoice/fetch/all", invoiceController.fetchInvoices);
 router.post("/invoice/draft", invoiceController.draftInvoice);
 router.post("/invoice/fetch", invoiceController.fetchOne);
+router.post("/invoice/public/fetch", invoiceController.fetchOnePublic);
 router.post("/invoice/finalize", invoiceController.finalizeInvoice);
 
 // products

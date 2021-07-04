@@ -100,7 +100,8 @@
         },
         "noCustomer": {
             "status": 400,
-            "message": "customer details not available"
+            "message": "customer details not available",
+            "body": true
         },
         "quantityOverflow": {
             "status": 400,
@@ -109,7 +110,8 @@
         },
         "alreadyFinalized": {
             "status": 400,
-            "message": "invoice already finalized"
+            "message": "invoice already finalized",
+            "body": true
         }
     }
 }

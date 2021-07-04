@@ -90,6 +90,25 @@ export async function fetchOne(req, res) {
     }
 }
 
+export async function fetchOnePublic(req, res) {
+    try {
+        const {error} = Validator.invoiceValidator.fetchOnePublic(req.body);
+        if(error) return Provider.error(res, "main", "val", error);
+
+        // invoices 
+        const invoice = await Mongo.Invoice.findOne({uuid: req.body.uuid}).lean();
+        if(!invoice) return Provider.error(res, "invoice", "notFound", {invoice: req.body.invoice})
+
+        const invoiceViewer = await Provider.invoice.invoiceViewer(invoice);
+
+        console.log(invoiceViewer)
+
+        return res.json(invoiceViewer);
+    }catch(err) {
+        console.log(err);
+    }
+}
+
 export async function fetchInvoices(req, res) {
     try {
         const {error} = Validator.authValidator.ping(req.body);
@@ -138,24 +157,30 @@ export async function finalizeInvoice (req, res) {
         if(!user) return;
 
         const invoiceRaw = await Mongo.Invoice.findOne({uuid: req.body.invoice, company: user.company});
-        if(invoiceRaw.finalized) return Provider.error(res, "invoice", "alreadyFinalized");
+        if(invoiceRaw.finalized) return Provider.error(res, "invoice", "alreadyFinalized", {uuid: invoiceRaw.uuid});
 
-        if(!invoiceRaw.customerDetails?.email && !invoiceRaw.customerDetails.phone) return Provider.error(res, "invoice", "noCustomer");
+        if(!invoiceRaw.customerDetails?.email && !invoiceRaw.customerDetails.phone) return Provider.error(res, "invoice", "noCustomer", {uuid: invoiceRaw.uuid});
 
 
         const invoice = await Provider.invoice.invoiceViewer(invoiceRaw);
 
         let stop = false;
-        let which = "";
+        let which = {
+            uuid: "",
+            quantity: 0
+        };
         invoice.items.forEach(item => invoice.products.forEach(product => {
             console.log(item.quantity, product.quantity)
             if(item.quantity > product.quantity && !stop && item.status !== 0) {
                 stop = true;
-                which = item.uuid;
+                which = {
+                    uuid: item.uuid,
+                    quantity: product.quantity
+                };
             }
         }));
         
-        if(stop) return Provider.error(res, "invoice", "quantityOverflow", {uuid: which});
+        if(stop) return Provider.error(res, "invoice", "quantityOverflow", {...which});
 
         let failed = false;
         await Promise.all(invoice.items.map(async item => {
@@ -165,6 +190,7 @@ export async function finalizeInvoice (req, res) {
                 return;
             }
             if(item.status !== 0) product.quantity = product.quantity - item.quantity
+            if(product.quantity === 0 && product.status !== 0) product.status = 2;
             await product.save();
             return;
         }));

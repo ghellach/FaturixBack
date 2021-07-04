@@ -22,3 +22,11 @@ export const fetchOne = (body) => {
     const result = schema.validate(body);
     return result;
 }
+
+export const fetchOnePublic = (body) => {
+    const schema = Joi.object({
+        uuid: Joi.string().uuid()
+    });
+    const result = schema.validate(body);
+    return result;
+}
