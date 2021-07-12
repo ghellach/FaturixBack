@@ -84,7 +84,17 @@ export async function fetchOne(req, res) {
 
         const invoiceViewer = await Provider.invoice.invoiceViewer(invoice);
 
-        return res.json(invoiceViewer);
+        const company = await Mongo.Company.findById(user.company).lean();
+
+        return res.json({
+            ...invoiceViewer, 
+            company:{
+                ...company,
+                _id: undefined,
+                uuid: undefined,
+                user: undefined 
+            }
+        });
     }catch(err) {
         console.log(err);
     }
@@ -101,9 +111,19 @@ export async function fetchOnePublic(req, res) {
 
         const invoiceViewer = await Provider.invoice.invoiceViewer(invoice);
 
+        const company = await Mongo.Company.findById(user.company).lean();
+
         console.log(invoiceViewer)
 
-        return res.json(invoiceViewer);
+        return res.json({
+            ...invoiceViewer, 
+            company:{
+                ...company,
+                _id: undefined,
+                uuid: undefined,
+                user: undefined 
+            }
+        });
     }catch(err) {
         console.log(err);
     }
